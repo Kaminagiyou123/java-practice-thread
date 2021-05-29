@@ -1,7 +1,9 @@
 package com.company;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 public class Starvation {
-    private static Object lock=new Object();
+    private static ReentrantLock lock= new ReentrantLock(true);
 
     public static void main(String[] args) {
         Thread t1= new Thread(new Worker(ThreadColor.ANSI_PURPLE),"Priority 10");
@@ -14,19 +16,15 @@ public class Starvation {
         t3.setPriority(6);
         t4.setPriority(4);
         t5.setPriority(2);
-        t1.start();
-        t2.start();
         t3.start();
+        t2.start();
+        t1.start();
         t4.start();
         t5.start();
-
-
     }
-
     private static class Worker implements Runnable{
         private int runCount=1;
         private String threadColor;
-
         public Worker(String threadColor) {
             this.threadColor = threadColor;
         }
@@ -34,9 +32,13 @@ public class Starvation {
         @Override
         public void run() {
             for (int i=0;i<100;i++){
-                synchronized (lock){
-                    System.out.format(threadColor+"%s: runCount=%d\n", Thread.currentThread().getName(),runCount++);
-
+                lock.lock();
+                try{
+                    synchronized (lock){
+                        System.out.format(threadColor+"%s: runCount=%d\n", Thread.currentThread().getName(),runCount++);
+                    }
+                    }finally{
+                        lock.unlock();
                 }
             }
         }
